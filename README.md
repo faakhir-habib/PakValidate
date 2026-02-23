@@ -288,6 +288,47 @@ if (cnicError != null)
 - `Errors` — dictionary of failed fields and their error messages (only failures)
 - `Results` — all validation results by field name
 
+### Custom Property Names
+
+The batch validation is **completely flexible with any property naming**:
+
+```csharp
+public class User
+{
+    public string IdCard { get; set; }      // Different name!
+    public string PhoneNumber { get; set; }
+    public string BankAccount { get; set; }
+}
+
+var user = new User
+{
+    IdCard = "35202-1234567-1",
+    PhoneNumber = "03001234567",
+    BankAccount = "PK36SCBL0000001123456702"
+};
+
+// Use your actual property names - field errors will match
+var batch = Pak.ValidateAll(
+    (nameof(User.IdCard), () => Pak.Cnic.Validate(user.IdCard)),
+    (nameof(User.PhoneNumber), () => Pak.Mobile.Validate(user.PhoneNumber)),
+    (nameof(User.BankAccount), () => Pak.Iban.Validate(user.BankAccount))
+);
+
+// Errors are keyed by YOUR property names, not the validator's
+if (!batch.IsValid)
+{
+    var idCardError = batch.GetError(nameof(User.IdCard));
+    if (idCardError != null)
+        ModelState.AddModelError(nameof(User.IdCard), idCardError);
+}
+```
+
+**Key Benefits:**
+- Field names in errors match your domain model
+- Works with any property naming convention
+- Type-safe with `nameof()` — no magic strings
+- Integrates perfectly with ASP.NET ModelState or other validation frameworks
+
 ## Extension Methods for Metadata
 
 Instead of accessing metadata via dictionary syntax, use extension methods for a cleaner, property-style API:
