@@ -73,6 +73,8 @@ var result = Pak.Cnic.Validate("35202-1234567-1");
 string formatted = Pak.Cnic.Format("3520212345671"); // 35202-1234567-1
 ```
 
+**Province codes:** 1=KP, 2=FATA/Merged, 3=Punjab, 4=Sindh, 5=Balochistan, 6=Islamabad, 7=GB, 8=AJK
+
 ### Mobile Number
 
 ```csharp
@@ -202,6 +204,8 @@ public class ValidationResult
 - .NET 6.0
 - .NET 7.0
 - .NET 8.0
+- .NET 9.0
+- .NET 10.0
 
 ## Contributing
 
