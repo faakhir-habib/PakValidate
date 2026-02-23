@@ -56,7 +56,8 @@ public class CnicValidatorTests
     [InlineData("17301-1234567-1", "Khyber Pakhtunkhwa")]
     [InlineData("51001-1234567-1", "Balochistan")]
     [InlineData("21001-1234567-1", "FATA / Merged Areas")]
-    [InlineData("71001-1234567-1", "Gilgit-Baltistan / AJK")]
+    [InlineData("71001-1234567-1", "Gilgit-Baltistan")]
+    [InlineData("81001-1234567-1", "Azad Jammu & Kashmir")]
     public void Validate_ExtractsProvinceCorrectly(string cnic, string expectedProvince)
     {
         Pak.Cnic.Validate(cnic).Metadata["Province"].Should().Be(expectedProvince);
