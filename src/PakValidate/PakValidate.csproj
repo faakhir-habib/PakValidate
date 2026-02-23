@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>PakValidate</PackageId>
+    <Description>A comprehensive .NET validation library for Pakistani data formats — CNIC, mobile numbers, NTN, IBAN, postal codes, vehicle plates, STRN, and more.</Description>
+    <PackageTags>pakistan;validation;cnic;ntn;iban;mobile;nadra;fbr;pakistani;strn</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="" Condition="Exists('..\..\icon.png')" />
+  </ItemGroup>
+
+</Project>
