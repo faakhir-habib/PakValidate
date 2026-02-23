@@ -3,6 +3,7 @@
 A comprehensive .NET validation library for Pakistani data formats. Validate CNIC, mobile numbers, NTN, IBAN, postal codes, landline numbers, vehicle plates, and STRN — with rich metadata extraction.
 
 [![NuGet](https://img.shields.io/nuget/v/PakValidate.svg)](https://www.nuget.org/packages/PakValidate)
+[![GitHub](https://img.shields.io/badge/GitHub-faakhir--habib/PakValidate-blue.svg)](https://github.com/faakhir-habib/PakValidate)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
