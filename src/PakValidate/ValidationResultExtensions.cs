@@ -125,4 +125,76 @@ public static class ValidationResultExtensions
     /// <summary>Gets any metadata value by key.</summary>
     public static string? GetMetadata(this ValidationResult result, string key)
         => result.Metadata?.TryGetValue(key, out var value) == true ? value : null;
+
+    /// <summary>
+    /// Throws a ValidationException if validation failed.
+    /// </summary>
+    /// <exception cref="ValidationException">Thrown when validation is invalid.</exception>
+    public static void ThrowIfInvalid(this ValidationResult result)
+    {
+        if (!result.IsValid)
+            throw new ValidationException(result.ErrorMessage ?? "Validation failed");
+    }
+
+    /// <summary>
+    /// Returns true if validation failed (opposite of IsValid).
+    /// </summary>
+    public static bool IsInvalid(this ValidationResult result) => !result.IsValid;
+
+    /// <summary>
+    /// Gets the error message or returns a default if validation is valid.
+    /// </summary>
+    public static string GetErrorOrDefault(this ValidationResult result, string defaultMessage = "Invalid")
+        => result.ErrorMessage ?? defaultMessage;
+
+    /// <summary>
+    /// Maps the validation result to a new value based on success or failure.
+    /// </summary>
+    /// <typeparam name="TOutput">The type of the mapped output.</typeparam>
+    /// <param name="result">The validation result.</param>
+    /// <param name="onSuccess">Function to execute if validation passed.</param>
+    /// <param name="onFailure">Function to execute if validation failed.</param>
+    /// <returns>The result of either onSuccess or onFailure function.</returns>
+    /// <example>
+    /// <code>
+    /// var gender = Pak.Cnic.Validate(cnic).Map(
+    ///     r => r.Gender(),
+    ///     error => throw new Exception(error)
+    /// );
+    /// </code>
+    /// </example>
+    public static TOutput Map<TOutput>(
+        this ValidationResult result,
+        Func<ValidationResult, TOutput> onSuccess,
+        Func<string, TOutput> onFailure)
+    {
+        return result.IsValid
+            ? onSuccess(result)
+            : onFailure(result.ErrorMessage ?? "Validation failed");
+    }
+
+    /// <summary>
+    /// Executes an action based on validation success or failure (side effects).
+    /// </summary>
+    /// <param name="result">The validation result.</param>
+    /// <param name="onSuccess">Action to execute if validation passed.</param>
+    /// <param name="onFailure">Action to execute if validation failed.</param>
+    /// <example>
+    /// <code>
+    /// Pak.Cnic.Validate(cnic).Match(
+    ///     r => Console.WriteLine($"Valid: {r.Gender()}"),
+    ///     error => Console.WriteLine($"Error: {error}")
+    /// );
+    /// </code>
+    /// </example>
+    public static void Match(
+        this ValidationResult result,
+        Action<ValidationResult> onSuccess,
+        Action<string> onFailure)
+    {
+        if (result.IsValid)
+            onSuccess(result);
+        else
+            onFailure(result.ErrorMessage ?? "Validation failed");
+    }
 }

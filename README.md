@@ -43,19 +43,19 @@ bool isValid = Pak.Cnic.IsValid("35202-1234567-1"); // true
 var result = Pak.Cnic.Validate("35202-1234567-1");
 if (result.IsValid)
 {
-    Console.WriteLine(result.Metadata["Gender"]);   // Male
-    Console.WriteLine(result.Metadata["Province"]);  // Punjab
-    Console.WriteLine(result.Metadata["Formatted"]); // 35202-1234567-1
+    Console.WriteLine(result.Gender());    // Male
+    Console.WriteLine(result.Province());  // Punjab
+    Console.WriteLine(result.Formatted()); // 35202-1234567-1
 }
 
 // Mobile number with carrier detection
 var mobile = Pak.Mobile.Validate("03001234567");
-Console.WriteLine(mobile.Metadata["Carrier"]);            // Jazz
-Console.WriteLine(mobile.Metadata["InternationalFormat"]); // +923001234567
+Console.WriteLine(mobile.Carrier());            // Jazz
+Console.WriteLine(mobile.InternationalFormat()); // +923001234567
 
 // IBAN with bank identification
 var iban = Pak.Iban.Validate("PK36SCBL0000001123456702");
-Console.WriteLine(iban.Metadata["BankName"]); // Standard Chartered Pakistan
+Console.WriteLine(iban.BankName()); // Standard Chartered Pakistan
 
 // Implicit bool conversion
 if (Pak.Mobile.Validate(phoneNumber))
@@ -238,29 +238,48 @@ bool isValid = Validator.TryValidateObject(customer, context, results, validateA
 Validate multiple fields at once with `Pak.ValidateAll()`:
 
 ```csharp
+public class Customer
+{
+    public string Cnic { get; set; }
+    public string Mobile { get; set; }
+    public string Iban { get; set; }
+    public string Ntn { get; set; }
+}
+
+var customer = new Customer
+{
+    Cnic = "35202-1234567-1",
+    Mobile = "03001234567",
+    Iban = "PK36SCBL0000001123456702",
+    Ntn = "1234567-8"
+};
+
+// Validate all fields at once
 var batch = Pak.ValidateAll(
-    ("CNIC", () => Pak.Cnic.Validate(model.Cnic)),
-    ("Mobile", () => Pak.Mobile.Validate(model.Mobile)),
-    ("IBAN", () => Pak.Iban.Validate(model.Iban)),
-    ("NTN", () => Pak.Ntn.Validate(model.Ntn))
+    (nameof(Customer.Cnic), () => Pak.Cnic.Validate(customer.Cnic)),
+    (nameof(Customer.Mobile), () => Pak.Mobile.Validate(customer.Mobile)),
+    (nameof(Customer.Iban), () => Pak.Iban.Validate(customer.Iban)),
+    (nameof(Customer.Ntn), () => Pak.Ntn.Validate(customer.Ntn))
 );
 
-if (!batch.IsValid)
-{
-    foreach (var error in batch.Errors)
-    {
-        Console.WriteLine($"{error.Key}: {error.Value}");
-    }
-}
-else
+// Check results
+if (batch.IsValid)
 {
     Console.WriteLine("All validations passed!");
 }
-
-// Access individual results if needed
-if (!batch.Results["CNIC"].IsValid)
+else
 {
-    var metadata = batch.Results["CNIC"].Metadata;
+    foreach (var (field, error) in batch.GetErrors())
+    {
+        Console.WriteLine($"{field}: {error}");
+    }
+}
+
+// Access specific field error
+var cnicError = batch.GetError(nameof(Customer.Cnic));
+if (cnicError != null)
+{
+    Console.WriteLine($"CNIC validation failed: {cnicError}");
 }
 ```
 
@@ -268,6 +287,119 @@ if (!batch.Results["CNIC"].IsValid)
 - `IsValid` — true if all validations passed
 - `Errors` — dictionary of failed fields and their error messages (only failures)
 - `Results` — all validation results by field name
+
+## Extension Methods for Metadata
+
+Instead of accessing metadata via dictionary syntax, use extension methods for a cleaner, property-style API:
+
+```csharp
+using PakValidate; // Includes ValidationResultExtensions
+
+var result = Pak.Cnic.Validate("35202-1234567-1");
+
+// Property-style access (recommended)
+string? gender = result.Gender();      // "Male"
+string? province = result.Province();  // "Punjab"
+string? formatted = result.Formatted(); // "35202-1234567-1"
+
+// Mobile numbers
+var mobile = Pak.Mobile.Validate("03001234567");
+string? carrier = mobile.Carrier();                // "Jazz"
+string? e164 = mobile.E164();                      // "+923001234567"
+string? localFormat = mobile.LocalFormat();        // "03001234567"
+
+// IBAN
+var iban = Pak.Iban.Validate("PK36SCBL0000001123456702");
+string? bankName = iban.BankName();        // "Standard Chartered Pakistan"
+string? bankCode = iban.BankCode();        // "SCBL"
+string? accountNumber = iban.AccountNumber(); // "0000001123456702"
+
+// Postal codes
+var postal = Pak.PostalCode.Validate("44000");
+string? region = postal.Region();        // "Islamabad"
+string? prefix = postal.RegionPrefix();  // "44"
+
+// Vehicle plates
+var plate = Pak.VehiclePlate.Validate("LEA-1234");
+string? city = plate.City();                  // "Lahore"
+string? regCity = plate.RegistrationCity();   // "Lahore"
+string? platePrefix = plate.PlatePrefix();    // "LEA"
+string? plateNumber = plate.PlateNumber();    // "1234"
+
+// Any metadata by key
+string? custom = result.GetMetadata("CustomKey");
+```
+
+All extension methods return `string?` (nullable) and safely handle missing metadata keys.
+
+## Error Handling Extensions
+
+Clean error handling with dedicated methods:
+
+```csharp
+var result = Pak.Cnic.Validate(cnic);
+
+// Throw exception if invalid
+result.ThrowIfInvalid();  // Throws ValidationException if not valid
+
+// Check if invalid (inverse of IsValid)
+if (result.IsInvalid())
+{
+    Console.WriteLine("Validation failed");
+}
+
+// Get error message with default
+string error = result.GetErrorOrDefault("No errors found");
+```
+
+## Result Mapping Extensions
+
+Process validation results using functional patterns:
+
+```csharp
+// Map: Transform result to new value
+string? gender = Pak.Cnic.Validate(cnic).Map(
+    r => r.Gender(),              // On success, extract gender
+    error => null                 // On failure, return null
+);
+
+// Map with complex return type
+var mobileInfo = Pak.Mobile.Validate(phone).Map(
+    r => new { Carrier = r.Carrier(), Format = r.LocalFormat() },
+    error => null
+);
+
+// Match: Execute actions based on validation result
+Pak.Cnic.Validate(cnic).Match(
+    r => Console.WriteLine($"Valid: {r.Gender()}"),
+    error => Console.WriteLine($"Invalid: {error}")
+);
+```
+
+## Batch Validation Extensions
+
+Enhanced batch validation error handling:
+
+```csharp
+var batch = Pak.ValidateAll(
+    (nameof(model.Cnic), () => Pak.Cnic.Validate(model.Cnic)),
+    (nameof(model.Mobile), () => Pak.Mobile.Validate(model.Mobile))
+);
+
+// Get specific field error
+string? cnicError = batch.GetError(nameof(model.Cnic));
+
+// Iterate all errors with tuples
+foreach (var (field, error) in batch.GetErrors())
+    Console.WriteLine($"{field}: {error}");
+
+// Throw if any validation failed
+batch.ThrowIfInvalid();  // Throws ValidationException with field list
+
+// Check if invalid
+if (batch.IsInvalid())
+    Console.WriteLine("Some fields failed validation");
+```
 
 ## ValidationResult
 

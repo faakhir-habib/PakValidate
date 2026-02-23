@@ -963,3 +963,352 @@ public class DataAnnotationsTests
 }
 
 #endregion
+
+#region Error Handling Extensions Tests
+
+public class ValidationResultErrorHandlingTests
+{
+    [Fact]
+    public void ThrowIfInvalid_ValidResult_DoesNotThrow()
+    {
+        const string validCnic = "35202-1234567-1";
+        var result = Pak.Cnic.Validate(validCnic);
+
+        Action act = () => result.ThrowIfInvalid();
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ThrowIfInvalid_InvalidResult_ThrowsValidationException()
+    {
+        const string invalidCnic = "invalid";
+        var result = Pak.Cnic.Validate(invalidCnic);
+
+        Action act = () => result.ThrowIfInvalid();
+        act.Should().Throw<ValidationException>()
+            .WithMessage("*13 digits*");
+    }
+
+    [Fact]
+    public void IsInvalid_ValidResult_ReturnsFalse()
+    {
+        const string validCnic = "35202-1234567-1";
+        var result = Pak.Cnic.Validate(validCnic);
+
+        result.IsInvalid().Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsInvalid_InvalidResult_ReturnsTrue()
+    {
+        const string invalidCnic = "invalid";
+        var result = Pak.Cnic.Validate(invalidCnic);
+
+        result.IsInvalid().Should().BeTrue();
+    }
+
+    [Fact]
+    public void GetErrorOrDefault_ValidResult_ReturnsDefaultMessage()
+    {
+        const string validCnic = "35202-1234567-1";
+        const string defaultMessage = "No errors";
+        var result = Pak.Cnic.Validate(validCnic);
+
+        var error = result.GetErrorOrDefault(defaultMessage);
+        error.Should().Be(defaultMessage);
+    }
+
+    [Fact]
+    public void GetErrorOrDefault_InvalidResult_ReturnsActualErrorMessage()
+    {
+        const string invalidCnic = "invalid";
+        var result = Pak.Cnic.Validate(invalidCnic);
+
+        var error = result.GetErrorOrDefault("Default");
+        error.Should().Contain("13 digits");
+    }
+
+    [Fact]
+    public void GetErrorOrDefault_WithoutParameter_UsesDefaultValue()
+    {
+        const string validCnic = "35202-1234567-1";
+        var result = Pak.Cnic.Validate(validCnic);
+
+        var error = result.GetErrorOrDefault();
+        error.Should().Be("Invalid");
+    }
+}
+
+#endregion
+
+#region Result Mapping Extensions Tests
+
+public class ValidationResultMappingTests
+{
+    [Fact]
+    public void Map_ValidResult_ExecutesOnSuccessFunction()
+    {
+        const string validCnic = "35202-1234567-1";
+        var result = Pak.Cnic.Validate(validCnic);
+
+        var mapped = result.Map(
+            r => r.Gender(),
+            _ => null
+        );
+
+        mapped.Should().Be("Male");
+    }
+
+    [Fact]
+    public void Map_InvalidResult_ExecutesOnFailureFunction()
+    {
+        const string invalidCnic = "invalid";
+        var result = Pak.Cnic.Validate(invalidCnic);
+        const string errorMessage = "Custom error";
+
+        var mapped = result.Map(
+            _ => "Success",
+            error => errorMessage
+        );
+
+        mapped.Should().Be(errorMessage);
+    }
+
+    [Fact]
+    public void Map_WithComplexReturn_ReturnsCorrectly()
+    {
+        const string validMobile = "03001234567";
+        var result = Pak.Mobile.Validate(validMobile);
+
+        var mobileData = result.Map(
+            r => new
+            {
+                Carrier = r.Carrier(),
+                Format = r.LocalFormat()
+            },
+            error => new { Carrier = (string?)null, Format = (string?)null }
+        );
+
+        mobileData.Carrier.Should().Be("Jazz");
+        mobileData.Format.Should().Be("03001234567");
+    }
+
+    [Fact]
+    public void Match_ValidResult_ExecutesOnSuccessAction()
+    {
+        const string validCnic = "35202-1234567-1";
+        var result = Pak.Cnic.Validate(validCnic);
+        bool actionExecuted = false;
+
+        result.Match(
+            _ => actionExecuted = true,
+            _ => { }
+        );
+
+        actionExecuted.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Match_InvalidResult_ExecutesOnFailureAction()
+    {
+        const string invalidCnic = "invalid";
+        var result = Pak.Cnic.Validate(invalidCnic);
+        bool actionExecuted = false;
+
+        result.Match(
+            _ => { },
+            _ => actionExecuted = true
+        );
+
+        actionExecuted.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Match_CanAccessResultMetadata()
+    {
+        const string validCnic = "35202-1234567-1";
+        var result = Pak.Cnic.Validate(validCnic);
+        string? capturedGender = null;
+
+        result.Match(
+            r => capturedGender = r.Gender(),
+            _ => { }
+        );
+
+        capturedGender.Should().Be("Male");
+    }
+
+    [Fact]
+    public void Match_CanAccessErrorMessage()
+    {
+        const string invalidCnic = "invalid";
+        var result = Pak.Cnic.Validate(invalidCnic);
+        string? capturedError = null;
+
+        result.Match(
+            _ => { },
+            error => capturedError = error
+        );
+
+        capturedError.Should().Contain("13 digits");
+    }
+}
+
+#endregion
+
+#region Batch Validation Extensions Tests
+
+public class BatchValidationResultExtensionsTests
+{
+    [Fact]
+    public void GetError_ExistingError_ReturnsErrorMessage()
+    {
+        const string invalidCnic = "invalid";
+        const string validMobile = "03001234567";
+        const string cnicFieldName = "Cnic";
+        const string mobileFieldName = "Mobile";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(invalidCnic)),
+            (mobileFieldName, () => Pak.Mobile.Validate(validMobile))
+        );
+
+        var error = batch.GetError(cnicFieldName);
+        error.Should().NotBeNullOrEmpty();
+        error.Should().Contain("13 digits");
+    }
+
+    [Fact]
+    public void GetError_NoError_ReturnsNull()
+    {
+        const string validCnic = "35202-1234567-1";
+        const string validMobile = "03001234567";
+        const string cnicFieldName = "Cnic";
+        const string mobileFieldName = "Mobile";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(validCnic)),
+            (mobileFieldName, () => Pak.Mobile.Validate(validMobile))
+        );
+
+        var error = batch.GetError(cnicFieldName);
+        error.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetErrors_MultipleErrors_ReturnsAllAsEnumerable()
+    {
+        const string invalidCnic = "invalid";
+        const string invalidMobile = "bad";
+        const string cnicFieldName = "Cnic";
+        const string mobileFieldName = "Mobile";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(invalidCnic)),
+            (mobileFieldName, () => Pak.Mobile.Validate(invalidMobile))
+        );
+
+        var errors = batch.GetErrors().ToList();
+        errors.Should().HaveCount(2);
+        errors.Should().Contain(e => e.Field == cnicFieldName);
+        errors.Should().Contain(e => e.Field == mobileFieldName);
+    }
+
+    [Fact]
+    public void GetErrors_PartialErrors_ReturnsOnlyFailedFields()
+    {
+        const string validCnic = "35202-1234567-1";
+        const string invalidMobile = "bad";
+        const string cnicFieldName = "Cnic";
+        const string mobileFieldName = "Mobile";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(validCnic)),
+            (mobileFieldName, () => Pak.Mobile.Validate(invalidMobile))
+        );
+
+        var errors = batch.GetErrors().ToList();
+        errors.Should().HaveCount(1);
+        errors.Should().AllSatisfy(e => e.Field.Should().Be(mobileFieldName));
+    }
+
+    [Fact]
+    public void GetErrors_EnablesTupleDeconstruction()
+    {
+        const string invalidCnic = "invalid";
+        const string cnicFieldName = "Cnic";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(invalidCnic))
+        );
+
+        var errorList = new List<string>();
+        foreach (var (field, error) in batch.GetErrors())
+        {
+            errorList.Add($"{field}: {error}");
+        }
+
+        errorList.Should().HaveCount(1);
+        errorList[0].Should().Contain(cnicFieldName);
+    }
+
+    [Fact]
+    public void ThrowIfInvalid_ValidBatch_DoesNotThrow()
+    {
+        const string validCnic = "35202-1234567-1";
+        const string validMobile = "03001234567";
+        const string cnicFieldName = "Cnic";
+        const string mobileFieldName = "Mobile";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(validCnic)),
+            (mobileFieldName, () => Pak.Mobile.Validate(validMobile))
+        );
+
+        Action act = () => batch.ThrowIfInvalid();
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ThrowIfInvalid_InvalidBatch_ThrowsValidationException()
+    {
+        const string invalidCnic = "invalid";
+        const string cnicFieldName = "Cnic";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(invalidCnic))
+        );
+
+        Action act = () => batch.ThrowIfInvalid();
+        act.Should().Throw<ValidationException>()
+            .WithMessage("*Cnic*");
+    }
+
+    [Fact]
+    public void IsInvalid_ValidBatch_ReturnsFalse()
+    {
+        const string validCnic = "35202-1234567-1";
+        const string cnicFieldName = "Cnic";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(validCnic))
+        );
+
+        batch.IsInvalid().Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsInvalid_InvalidBatch_ReturnsTrue()
+    {
+        const string invalidCnic = "invalid";
+        const string cnicFieldName = "Cnic";
+
+        var batch = Pak.ValidateAll(
+            (cnicFieldName, () => Pak.Cnic.Validate(invalidCnic))
+        );
+
+        batch.IsInvalid().Should().BeTrue();
+    }
+}
+
+#endregion
