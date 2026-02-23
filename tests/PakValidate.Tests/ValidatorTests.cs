@@ -792,3 +792,174 @@ public class AdditionalEdgeCaseTests
 }
 
 #endregion
+
+#region Batch Validation Tests
+
+public class BatchValidationTests
+{
+    [Fact]
+    public void ValidateAll_AllValid_ReturnsSuccess()
+    {
+        var batch = Pak.ValidateAll(
+            ("Cnic", () => Pak.Cnic.Validate("35202-1234567-1")),
+            ("Mobile", () => Pak.Mobile.Validate("03001234567")),
+            ("Iban", () => Pak.Iban.Validate("PK36SCBL0000001123456702"))
+        );
+
+        batch.IsValid.Should().BeTrue();
+        batch.Errors.Should().BeEmpty();
+        batch.Results.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void ValidateAll_SomeInvalid_ReturnsFailure()
+    {
+        var batch = Pak.ValidateAll(
+            ("Cnic", () => Pak.Cnic.Validate("35202-1234567-1")),
+            ("Mobile", () => Pak.Mobile.Validate("invalid")),
+            ("Iban", () => Pak.Iban.Validate("invalid"))
+        );
+
+        batch.IsValid.Should().BeFalse();
+        batch.Errors.Should().HaveCount(2);
+        batch.Errors.Should().ContainKeys("Mobile", "Iban");
+        batch.Results.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void ValidateAll_PopulatesErrorMessages()
+    {
+        var batch = Pak.ValidateAll(
+            ("Cnic", () => Pak.Cnic.Validate(null)),
+            ("Mobile", () => Pak.Mobile.Validate(""))
+        );
+
+        batch.Errors["Cnic"].Should().Contain("required");
+        batch.Errors["Mobile"].Should().Contain("required");
+    }
+
+    [Fact]
+    public void ValidateAll_ImplicitBoolConversion_Works()
+    {
+        var validBatch = Pak.ValidateAll(
+            ("Cnic", () => Pak.Cnic.Validate("35202-1234567-1"))
+        );
+        var invalidBatch = Pak.ValidateAll(
+            ("Cnic", () => Pak.Cnic.Validate("invalid"))
+        );
+
+        (validBatch ? true : false).Should().BeTrue();
+        (invalidBatch ? true : false).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ValidateAll_Empty_ReturnsSuccess()
+    {
+        var batch = Pak.ValidateAll();
+        batch.IsValid.Should().BeTrue();
+        batch.Errors.Should().BeEmpty();
+    }
+}
+
+#endregion
+
+#region Data Annotations Tests
+
+public class DataAnnotationsTests
+{
+    [Theory]
+    [InlineData("35202-1234567-1", true)]
+    [InlineData("3520212345671", true)]
+    [InlineData("invalid", false)]
+    [InlineData(null, true)] // Null is allowed; use [Required] separately
+    public void PakCnicAttribute_Validates(string? value, bool expectedValid)
+    {
+        var attr = new PakValidate.DataAnnotations.PakCnicAttribute();
+        attr.IsValid(value).Should().Be(expectedValid);
+    }
+
+    [Theory]
+    [InlineData("03001234567", true)]
+    [InlineData("0300-1234567", true)]
+    [InlineData("invalid", false)]
+    [InlineData(null, true)]
+    public void PakMobileAttribute_Validates(string? value, bool expectedValid)
+    {
+        var attr = new PakValidate.DataAnnotations.PakMobileAttribute();
+        attr.IsValid(value).Should().Be(expectedValid);
+    }
+
+    [Theory]
+    [InlineData("1234567-8", true)]
+    [InlineData("35202-1234567-1", true)]
+    [InlineData("invalid", false)]
+    [InlineData(null, true)]
+    public void PakNtnAttribute_Validates(string? value, bool expectedValid)
+    {
+        var attr = new PakValidate.DataAnnotations.PakNtnAttribute();
+        attr.IsValid(value).Should().Be(expectedValid);
+    }
+
+    [Theory]
+    [InlineData("PK36SCBL0000001123456702", true)]
+    [InlineData("invalid", false)]
+    [InlineData(null, true)]
+    public void PakIbanAttribute_Validates(string? value, bool expectedValid)
+    {
+        var attr = new PakValidate.DataAnnotations.PakIbanAttribute();
+        attr.IsValid(value).Should().Be(expectedValid);
+    }
+
+    [Theory]
+    [InlineData("44000", true)]
+    [InlineData("75500", true)]
+    [InlineData("invalid", false)]
+    [InlineData(null, true)]
+    public void PakPostalCodeAttribute_Validates(string? value, bool expectedValid)
+    {
+        var attr = new PakValidate.DataAnnotations.PakPostalCodeAttribute();
+        attr.IsValid(value).Should().Be(expectedValid);
+    }
+
+    [Theory]
+    [InlineData("051-1234567", true)]
+    [InlineData("021-12345678", true)]
+    [InlineData("invalid", false)]
+    [InlineData(null, true)]
+    public void PakLandlineAttribute_Validates(string? value, bool expectedValid)
+    {
+        var attr = new PakValidate.DataAnnotations.PakLandlineAttribute();
+        attr.IsValid(value).Should().Be(expectedValid);
+    }
+
+    [Theory]
+    [InlineData("LEA-1234", true)]
+    [InlineData("ISB-123", true)]
+    [InlineData("invalid", false)]
+    [InlineData(null, true)]
+    public void PakVehiclePlateAttribute_Validates(string? value, bool expectedValid)
+    {
+        var attr = new PakValidate.DataAnnotations.PakVehiclePlateAttribute();
+        attr.IsValid(value).Should().Be(expectedValid);
+    }
+
+    [Theory]
+    [InlineData("1312345678901", true)]
+    [InlineData("invalid", false)]
+    [InlineData(null, true)]
+    public void PakStrnAttribute_Validates(string? value, bool expectedValid)
+    {
+        var attr = new PakValidate.DataAnnotations.PakStrnAttribute();
+        attr.IsValid(value).Should().Be(expectedValid);
+    }
+
+    [Fact]
+    public void DataAnnotationsAttributes_RejectNonStringValues()
+    {
+        var attr = new PakValidate.DataAnnotations.PakCnicAttribute();
+        attr.IsValid(12345).Should().BeFalse();
+        attr.IsValid(true).Should().BeFalse();
+    }
+}
+
+#endregion

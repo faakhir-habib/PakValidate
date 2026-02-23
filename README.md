@@ -26,6 +26,9 @@ dotnet add package PakValidate
 
 # FluentValidation extensions (optional)
 dotnet add package PakValidate.FluentValidation
+
+# Data Annotations attributes (optional)
+dotnet add package PakValidate.DataAnnotations
 ```
 
 ## Quick Start
@@ -181,6 +184,90 @@ public class CustomerValidator : AbstractValidator<Customer>
     }
 }
 ```
+
+## Data Annotations
+
+```bash
+dotnet add package PakValidate.DataAnnotations
+```
+
+Use `[PakCnic]`, `[PakMobile]`, `[PakIban]`, and other validation attributes directly on model properties:
+
+```csharp
+using PakValidate.DataAnnotations;
+
+public class Customer
+{
+    [Required]
+    [PakCnic]
+    public string Cnic { get; set; }
+
+    [PakMobile]
+    public string? PhoneNumber { get; set; }
+
+    [PakIban]
+    public string? BankAccount { get; set; }
+
+    [PakPostalCode]
+    public string? PostalCode { get; set; }
+
+    [PakVehiclePlate]
+    public string? VehiclePlate { get; set; }
+
+    [PakNtn]
+    public string? NTN { get; set; }
+
+    [PakLandline]
+    public string? Landline { get; set; }
+
+    [PakStrn]
+    public string? STRN { get; set; }
+}
+
+// In a controller or service:
+var customer = new Customer { Cnic = "35202-1234567-1" };
+var context = new ValidationContext(customer);
+var results = new List<ValidationResult>();
+bool isValid = Validator.TryValidateObject(customer, context, results, validateAllProperties: true);
+```
+
+**Note:** Attributes return `true` for null values. Use `[Required]` separately if the field is mandatory.
+
+## Batch Validation
+
+Validate multiple fields at once with `Pak.ValidateAll()`:
+
+```csharp
+var batch = Pak.ValidateAll(
+    ("CNIC", () => Pak.Cnic.Validate(model.Cnic)),
+    ("Mobile", () => Pak.Mobile.Validate(model.Mobile)),
+    ("IBAN", () => Pak.Iban.Validate(model.Iban)),
+    ("NTN", () => Pak.Ntn.Validate(model.Ntn))
+);
+
+if (!batch.IsValid)
+{
+    foreach (var error in batch.Errors)
+    {
+        Console.WriteLine($"{error.Key}: {error.Value}");
+    }
+}
+else
+{
+    Console.WriteLine("All validations passed!");
+}
+
+// Access individual results if needed
+if (!batch.Results["CNIC"].IsValid)
+{
+    var metadata = batch.Results["CNIC"].Metadata;
+}
+```
+
+**Returns:** `BatchValidationResult` with:
+- `IsValid` — true if all validations passed
+- `Errors` — dictionary of failed fields and their error messages (only failures)
+- `Results` — all validation results by field name
 
 ## ValidationResult
 

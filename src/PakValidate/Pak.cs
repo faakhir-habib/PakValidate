@@ -122,4 +122,32 @@ public static class Pak
         /// <inheritdoc cref="StrnValidator.Format"/>
         public static string? Format(string? strn) => StrnValidator.Format(strn);
     }
+
+    /// <summary>
+    /// Validates multiple fields at once, returning a combined batch result.
+    /// </summary>
+    /// <param name="validations">Variable number of (field name, validation delegate) tuples.</param>
+    /// <returns>A BatchValidationResult containing all results and errors.</returns>
+    /// <example>
+    /// <code>
+    /// var batch = Pak.ValidateAll(
+    ///     ("Cnic", () => Pak.Cnic.Validate(model.Cnic)),
+    ///     ("Mobile", () => Pak.Mobile.Validate(model.Mobile)),
+    ///     ("Iban", () => Pak.Iban.Validate(model.Iban))
+    /// );
+    /// if (!batch.IsValid)
+    /// {
+    ///     foreach (var error in batch.Errors)
+    ///         Console.WriteLine($"{error.Key}: {error.Value}");
+    /// }
+    /// </code>
+    /// </example>
+    public static BatchValidationResult ValidateAll(
+        params (string field, Func<ValidationResult> validate)[] validations)
+    {
+        var results = validations
+            .Select(v => (v.field, result: v.validate()))
+            .ToList();
+        return new BatchValidationResult(results);
+    }
 }

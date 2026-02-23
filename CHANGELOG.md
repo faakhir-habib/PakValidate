@@ -5,6 +5,18 @@ All notable changes to PakValidate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-23
+
+### Added
+
+- **Data Annotations Support** — New `PakValidate.DataAnnotations` NuGet package with validation attributes (`[PakCnic]`, `[PakMobile]`, `[PakIban]`, etc.) for System.ComponentModel.DataAnnotations integration
+- **Batch Validation** — `Pak.ValidateAll()` method for validating multiple fields at once with combined results
+- **BatchValidationResult Type** — Returns all results plus error dictionary for easy error handling
+- **Extension Methods for Metadata** — `result.Gender()`, `result.Carrier()`, `result.Region()`, etc. for property-style metadata access instead of dictionary syntax
+- **Metadata Constants** — Private const string keys in ValidationResultExtensions to eliminate magic strings
+- **.NET 9.0 and 10.0 Support** — Updated target frameworks; CI/CD now tests on all frameworks (6.0, 7.0, 8.0, 9.0, 10.0)
+- **AJK CNIC Code Documentation** — Clarified province code 8 represents Azad Jammu & Kashmir
+
 ## [1.0.0] - 2026-02-23
 
 ### Added

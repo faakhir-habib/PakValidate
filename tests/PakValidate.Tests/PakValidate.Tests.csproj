@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PakValidate\PakValidate.csproj" />
     <ProjectReference Include="..\..\src\PakValidate.FluentValidation\PakValidate.FluentValidation.csproj" />
+    <ProjectReference Include="..\..\src\PakValidate.DataAnnotations\PakValidate.DataAnnotations.csproj" />
   </ItemGroup>
 
 </Project>
