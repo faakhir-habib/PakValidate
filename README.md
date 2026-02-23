@@ -329,6 +329,116 @@ if (!batch.IsValid)
 - Type-safe with `nameof()` — no magic strings
 - Integrates perfectly with ASP.NET ModelState or other validation frameworks
 
+## Validation Works Everywhere
+
+The new v1.2 extensions and error handling work with **all three validation approaches**: direct API, FluentValidation, and Data Annotations.
+
+### Direct API (Core Package)
+
+```csharp
+using PakValidate;
+
+var result = Pak.Cnic.Validate("35202-1234567-1");
+
+// v1.2 error handling extensions
+result.ThrowIfInvalid();
+if (result.IsInvalid())
+    Console.WriteLine(result.GetErrorOrDefault("Invalid"));
+
+// v1.2 result mapping
+string? gender = result.Map(
+    r => r.Gender(),
+    error => null
+);
+
+// v1.2 batch validation
+var batch = Pak.ValidateAll(
+    (nameof(model.Cnic), () => Pak.Cnic.Validate(model.Cnic)),
+    (nameof(model.Mobile), () => Pak.Mobile.Validate(model.Mobile))
+);
+batch.ThrowIfInvalid();
+foreach (var (field, error) in batch.GetErrors())
+    Console.WriteLine($"{field}: {error}");
+```
+
+### FluentValidation Integration
+
+```csharp
+using PakValidate.FluentValidation;
+using FluentValidation;
+
+public class UserValidator : AbstractValidator<User>
+{
+    public UserValidator()
+    {
+        RuleFor(x => x.IdCard)
+            .NotEmpty()
+            .IsValidCnic();  // ✅ Works with v1.2 error handling
+
+        RuleFor(x => x.PhoneNumber)
+            .IsValidPakistaniMobile();
+
+        RuleFor(x => x.BankAccount)
+            .IsValidPakistaniIban();
+    }
+}
+
+// In your service/controller
+var user = new User { IdCard = "invalid", PhoneNumber = "123" };
+var validator = new UserValidator();
+var result = validator.Validate(user);
+
+if (!result.IsValid)
+{
+    foreach (var error in result.Errors)
+        ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+}
+```
+
+### Data Annotations Integration
+
+```csharp
+using PakValidate.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+
+public class User
+{
+    [Required]
+    [PakCnic]
+    public string IdCard { get; set; }
+
+    [PakMobile]
+    public string? PhoneNumber { get; set; }
+
+    [PakIban]
+    public string? BankAccount { get; set; }
+}
+
+// In your controller/service
+var user = new User { IdCard = "35202-1234567-1", PhoneNumber = "03001234567" };
+var context = new ValidationContext(user);
+var results = new List<ValidationResult>();
+
+if (!Validator.TryValidateObject(user, context, results, validateAllProperties: true))
+{
+    foreach (var error in results)
+        ModelState.AddModelError(error.MemberNames.First(), error.ErrorMessage);
+}
+```
+
+### Key Points
+
+✅ **All approaches use the same core validators** — Consistent behavior across all three integrations
+✅ **v1.2 extensions work everywhere** — Error handling and mapping work with direct API
+✅ **Flexible property naming** — Use any property names with FluentValidation and Data Annotations
+✅ **ASP.NET integrated** — Seamlessly add errors to ModelState for web applications
+✅ **Zero breaking changes** — All existing code continues to work unchanged
+
+**Choose based on your needs:**
+- **Direct API** — Lightweight, maximum control, functional extensions
+- **FluentValidation** — Complex rule composition, enterprise applications
+- **Data Annotations** — Minimal attributes, ASP.NET MVC/Core, model-driven validation
+
 ## Extension Methods for Metadata
 
 Instead of accessing metadata via dictionary syntax, use extension methods for a cleaner, property-style API:
