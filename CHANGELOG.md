@@ -5,6 +5,16 @@ All notable changes to PakValidate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-23
+
+### Added
+
+- **Error Handling Extensions** — `ThrowIfInvalid()`, `IsInvalid()`, `GetErrorOrDefault()` for cleaner error handling patterns
+- **Result Mapping Extensions** — `Map<T>()` and `Match()` for functional composition and side-effect handling
+- **Batch Validation Extensions** — `GetError()`, `GetErrors()` tuple enumeration, enhanced `ThrowIfInvalid()` for batch operations
+- **ValidationException Type** — Dedicated exception class thrown by `ThrowIfInvalid()` methods
+- **23 New Tests** — Comprehensive test coverage for all new extension methods (total 285 tests)
+
 ## [1.1.0] - 2026-02-23
 
 ### Added
