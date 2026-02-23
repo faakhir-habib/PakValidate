@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <Version>1.0.0</Version>
-    <Authors>Faakhir</Authors>
-    <Company>Faakhir</Company>
-    <Copyright>Copyright © 2026 Faakhir</Copyright>
+    <Authors>Faakhir Habib</Authors>
+    <Company>Faakhir Habib</Company>
+    <Copyright>Copyright © 2026 Faakhir Habib</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/faakhir/PakValidate</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/faakhir/PakValidate</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/faakhir-habib/PakValidate</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/faakhir-habib/PakValidate</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
 
     <!-- Code quality -->
