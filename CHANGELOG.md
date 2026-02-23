@@ -1,0 +1,24 @@
+# Changelog
+
+All notable changes to PakValidate will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-02-23
+
+### Added
+
+- **CNIC Validator** — 13-digit NADRA identity card validation with gender, province, and locality extraction
+- **Mobile Validator** — Pakistani mobile number validation with carrier detection (Jazz, Telenor, Zong, Ufone, SCO) and E.164 formatting
+- **NTN Validator** — National Tax Number validation (standard 8-digit and CNIC-based 13-digit formats)
+- **IBAN Validator** — Pakistani IBAN validation with MOD-97 check digit verification and bank identification (25+ banks)
+- **Postal Code Validator** — 5-digit postal code validation with region/city mapping
+- **Landline Validator** — Landline number validation with area code and city detection
+- **Vehicle Plate Validator** — Registration plate validation with city identification and government plate support
+- **STRN Validator** — Sales Tax Registration Number validation with RTO jurisdiction detection
+- **FluentValidation Extensions** — Drop-in `.IsValidCnic()`, `.IsValidPakistaniMobile()`, etc. for FluentValidation
+- **Unified `Pak.*` API** — Single entry point: `Pak.Cnic.Validate()`, `Pak.Mobile.GetCarrier()`, etc.
+- **Multi-target** — .NET 6.0, 7.0, and 8.0 support
+- **Source Link** — Debugger support for stepping into PakValidate source
+- **CI/CD** — GitHub Actions pipeline with multi-framework testing and NuGet publish
