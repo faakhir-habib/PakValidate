@@ -19,7 +19,8 @@ public static partial class CnicValidator
         ['4'] = "Sindh",
         ['5'] = "Balochistan",
         ['6'] = "Islamabad",
-        ['7'] = "Gilgit-Baltistan / AJK",
+        ['7'] = "Gilgit-Baltistan",
+        ['8'] = "Azad Jammu & Kashmir",
     };
 
 #if NET7_0_OR_GREATER
