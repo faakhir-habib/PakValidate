@@ -4,6 +4,7 @@ A comprehensive .NET validation library for Pakistani data formats. Validate CNI
 
 [![NuGet](https://img.shields.io/nuget/v/PakValidate.svg)](https://www.nuget.org/packages/PakValidate)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI/CD](https://github.com/faakhir-habib/PakValidate/actions/workflows/ci.yml/badge.svg)](https://github.com/faakhir-habib/PakValidate/actions/workflows/ci.yml)
 
 ## Features
 
